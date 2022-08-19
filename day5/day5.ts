@@ -6,83 +6,74 @@ function syncReadFile(filename: string) {
   return result;
 }
 
-function getPointsFromLine(line: {startX: Number, startY: Number, endX: Number, endY: Number}){
-  var pointsFromLine = [];
-  var xN = Math.abs(Number(line.startX) - Number(line.endX));
-  var yN = Math.abs(Number(line.startY) - Number(line.endY));
-  if(xN == 0){
-    if(Number(line.startY) > Number(line.endY)){
-      for (let i = Number(line.startY); i >= Number(line.endY); i--) {
-          pointsFromLine.push({x: line.startX, y: i})
-          addPointToMap({x: Number(line.startX), y: i});
-      }
-    } else {
-      for (let i = Number(line.startY); i <= Number(line.endY); i++) {
-          pointsFromLine.push({x: line.startX, y: i})
-          addPointToMap({x: Number(line.startX), y: i});
-      }
-    }
-  } else if (yN == 0){
-    if(Number(line.startX) > Number(line.endX)){
-      for (let i = Number(line.startX); i >= Number(line.endX); i--) {
-          pointsFromLine.push({x: i, y: line.startY})
-          addPointToMap({x: i, y: Number(line.startY)});
-      }
-    } else {
-      for (let i = Number(line.startX); i <= Number(line.endX); i++) {
-          pointsFromLine.push({x: i, y: line.startY})
-          addPointToMap({x: i, y: Number(line.startY)});
-      }
-    }
-  } //part 2
-    else {
-      if((Number(line.startX) > Number(line.endX))&&(Number(line.startY) > Number(line.endY))){
-        var j = Number(line.startY)
-        for (let i = Number(line.startX); i >= Number(line.endX); i--) {
-            pointsFromLine.push({x: i, y: j})
-            addPointToMap({x: i, y: j});
-            j--;
-        }
-      } else if((Number(line.startX) > Number(line.endX))&&(Number(line.startY) < Number(line.endY))){
-        var j = Number(line.startY)
-        for (let i = Number(line.startX); i >= Number(line.endX); i--) {
-            pointsFromLine.push({x: i, y: j})
-            addPointToMap({x: i, y: j});
-            j++;
-        }
-      } else if((Number(line.startX) < Number(line.endX))&&(Number(line.startY) > Number(line.endY))){
-        var j = Number(line.startX)
-        for (let i = Number(line.startY); i >= Number(line.endY); i--) {
-            pointsFromLine.push({x: j, y: i})
-            addPointToMap({x: j, y: i});
-            j++;
-        }
-      }
-       else {
-        var j = Number(line.startY)
-        for (let i = Number(line.startX); i <= Number(line.endX); i++) {
-            pointsFromLine.push({x: i, y: j})
-            addPointToMap({x: i, y: j});
-            j++;
-        }
-      }
+function getAllNumbersBetweenXYAddToMapVertical(smaller: number, bigger: number, constant: number) {
+  for (var i = smaller; i <= bigger; i++) {
+    addPointToMap({ x: constant, y: i });
   }
-  return pointsFromLine;
 }
 
-function addPointToMap(point: {x: number, y: number}){
+function getAllNumbersBetweenXYAddToMapHorizontal(smaller: number, bigger: number, constant: number) {
+  for (var i = smaller; i <= bigger; i++) {
+    addPointToMap({ x: i, y: constant });
+  }
+}
+
+function incXincY(smallX: number, bigX: number, smallY: number, bigY: number) {
+  var j = smallY;
+  for (var i = smallX; i <= bigX; i++) {
+    addPointToMap({ x: i, y: j });
+    j++;
+  }
+}
+
+function incXdecY(smallX: number, bigX: number, smallY: number, bigY: number) {
+  var j = bigY;
+  for (var i = smallX; i <= bigX; i++) {
+    addPointToMap({ x: i, y: j });
+    j--;
+  }
+}
+
+function getPointsFromLine(line: { startX: Number, startY: Number, endX: Number, endY: Number }, lineType: string) {
+  if (lineType == "vertical") {
+    if (Number(line.startY) > Number(line.endY)) {
+      getAllNumbersBetweenXYAddToMapVertical(Number(line.endY), Number(line.startY), Number(line.startX));
+    } else {
+      getAllNumbersBetweenXYAddToMapVertical(Number(line.startY), Number(line.endY), Number(line.startX));
+    }
+  } else if (lineType == "horizontal") {
+    if (Number(line.startX) > Number(line.endX)) {
+      getAllNumbersBetweenXYAddToMapHorizontal(Number(line.endX), Number(line.startX), Number(line.startY));
+    } else {
+      getAllNumbersBetweenXYAddToMapHorizontal(Number(line.startX), Number(line.endX), Number(line.startY));
+    }
+  } //part 2
+  else {
+    if ((Number(line.startX) > Number(line.endX)) && (Number(line.startY) > Number(line.endY))) {
+      incXincY(Number(line.endX), Number(line.startX), Number(line.endY), Number(line.startY))
+    } else if ((Number(line.startX) > Number(line.endX)) && (Number(line.startY) < Number(line.endY))) {
+      incXdecY(Number(line.endX), Number(line.startX), Number(line.startY), Number(line.endY))
+    } else if ((Number(line.startX) < Number(line.endX)) && (Number(line.startY) > Number(line.endY))) {
+      incXdecY(Number(line.startX), Number(line.endX), Number(line.endY), Number(line.startY))
+    } else {
+      incXincY(Number(line.startX), Number(line.endX), Number(line.startY), Number(line.endY))
+    }
+  }
+}
+
+function addPointToMap(point: { x: number, y: number }) {
   var pointStr = JSON.stringify(point);
-  if(allPoints.has(pointStr)){
+  if (allPoints.has(pointStr)) {
     var n = allPoints.get(pointStr);
-    if(n){
-      if(n==1){
-        allPoints.set(pointStr, n+1);
+    if (n) {
+      if (n == 1) {
+        allPoints.set(pointStr, n + 1);
         answer += 1;
-      }else{
-        allPoints.set(pointStr, n+1);
+      } else {
+        allPoints.set(pointStr, n + 1);
       }
     }
-  }else{
+  } else {
     allPoints.set(pointStr, 1);
   }
 }
@@ -94,20 +85,21 @@ let fileString: string = syncReadFile('./input2.txt');
 fileString = fileString.replace(/\r?\n?[^\r\n]*$/, ""); //removes annoying last line
 var fileArr = fileString.split('\n');
 for (let i = 0; i < fileArr.length; i++) {
-    var lineString = fileArr[i].split(' -> ');
-    var startString = lineString[0].split(',');
-    var endString = lineString[1].split(',');
-    var line = {
-      startX: Number(startString[0]),
-      startY: Number(startString[1]),
-      endX: Number(endString[0]),
-      endY: Number(endString[1])
-    }
-    //part1: commented
-    /*if (line.startX == line.endX || line.startY == line.endY) {
-        var points = getPointsFromLine(line);
-    }*/
-    //part2: uncommented
-    var points = getPointsFromLine(line);
+  var lineString = fileArr[i].split(' -> ');
+  var startString = lineString[0].split(',');
+  var endString = lineString[1].split(',');
+  var line = {
+    startX: Number(startString[0]),
+    startY: Number(startString[1]),
+    endX: Number(endString[0]),
+    endY: Number(endString[1])
+  }
+  if (line.startX == line.endX) {
+    getPointsFromLine(line, "vertical");
+  } else if (line.startY == line.endY) {
+    getPointsFromLine(line, "horizontal");
+  } else {
+    getPointsFromLine(line, "diagonal");
+  }
 }
 console.log(answer);
