@@ -11,24 +11,28 @@ function getBingoNumbers(line: string){
   return numbers;
 }
 
-function getBingoBoards(fileArr: string[]){
-  let boards:{ number: Number; matched: Boolean; }[][][] = [[]];
-  for (let i = 0; i < fileArr.length; i++) {
-    let board: {number: Number; matched: Boolean} [][] = [[]];
-    let stringArr = fileArr[i].split('\n');
-    for (let j = 0; j < stringArr.length; j++) {
-        let numArr = stringArr[j].split(/\s+/).filter(Boolean).map((n) => ({
+function getBingoBoards(boardString: string[]){
+  var markableBoards: MarkableBoard [] = [];
+  for (let i = 0; i < boardString.length; i++) {
+    let board: BoardTile [][] = [[]];
+    let boardLines = boardString[i].split('\n');
+    for (let j = 0; j < boardLines.length; j++) {
+        let boardNumbers : BoardTile [] = boardLines[j].split(/\s+/).filter(Boolean).map((n) => ({
         number: Number(n),
         matched: false
       }))
-        board[j] = numArr;
+        board[j] = boardNumbers;
     }
-    boards[i] = board;
+    var markableBoard : MarkableBoard = {
+      board: board,
+      winner: false
+    }
+    markableBoards.push(markableBoard);
   }
-  return boards;
+  return markableBoards;
 }
 
-function markBoard(bingoNumber: number, bingoBoard: {number: Number; matched: Boolean} [][]){
+function markBoard(bingoNumber: number, bingoBoard: BoardTile [][]){
     for (let i = 0; i < bingoBoard.length; i++) {
         var bingoLine = bingoBoard[i];
         for (let j = 0; j < bingoLine.length; j++) {
@@ -40,11 +44,11 @@ function markBoard(bingoNumber: number, bingoBoard: {number: Number; matched: Bo
     return bingoBoard;
 }
 
-function checkIfMatched(bingoValue: {number: Number; matched: Boolean}){
+function checkIfMatched(bingoValue: BoardTile){
   return bingoValue.matched == true;
 }
 
-function checkIfBingo(bingoBoard: {number: Number; matched: Boolean} [][]){
+function checkIfBingo(bingoBoard: BoardTile [][]){
   for (let i = 0; i < bingoBoard.length; i++) {
     var bingoLine = bingoBoard[i];
     if(bingoLine.every(checkIfMatched)){
@@ -60,7 +64,7 @@ function checkIfBingo(bingoBoard: {number: Number; matched: Boolean} [][]){
   return false;
 }
 
-function calculateWinningNumber(bingoNumber: number, bingoBoard: {number: Number; matched: Boolean} [][]){
+function calculateWinningNumber(bingoNumber: number, bingoBoard: BoardTile [][]){
   var unmatchedSum: Number = 0;
   for (let i = 0; i < bingoBoard.length; i++) {
       var bingoLine = bingoBoard[i];
@@ -73,54 +77,44 @@ function calculateWinningNumber(bingoNumber: number, bingoBoard: {number: Number
   console.log(Number(unmatchedSum)*bingoNumber);
 }
 
-function findWinningBingo(bingoNumbers: number [], bingoBoards: {number: Number; matched: Boolean} [][][]){
+function findWinningAndLosingBingo(bingoNumbers: number [], bingoBoards: MarkableBoard []){
+  var nOfBoards = bingoBoards.length;
+  var nOfMarks = 0;
   for (let i = 0; i < bingoNumbers.length; i++) {
       for (let j = 0; j < bingoBoards.length; j++) {
-          bingoBoards[j]=markBoard(bingoNumbers[i], bingoBoards[j]);
-          if(checkIfBingo(bingoBoards[j])){
-            //console.log("Bingo board "+j+" is a bingo");
-            //console.log("The number called was "+bingoNumbers[i])
-            //console.log(bingoBoards[j]);
-            console.log("Part 1:")
-            calculateWinningNumber(bingoNumbers[i], bingoBoards[j]);
-            return;
-          }
-      }
-  }
-}
-
-function findLosingBingo(bingoNumbers: number [], bingoBoards: {number: Number; matched: Boolean} [][][]){
-  for (let i = 0; i < bingoNumbers.length; i++) {
-      for (let j = 0; j < bingoBoards.length; j++) {
-          bingoBoards[j]=markBoard(bingoNumbers[i], bingoBoards[j]);
-          if(checkIfBingo(bingoBoards[j])){
-            if(bingoBoards.length != 1){
-              bingoBoards.splice(j, 1);
-              findLosingBingo(bingoNumbers,bingoBoards)
-            }else{
-              //console.log("Bingo board "+j+" is a bingo");
-              //console.log("The number called was "+bingoNumbers[i])
-              //console.log(bingoBoards[j]);
+          bingoBoards[j].board=markBoard(bingoNumbers[i], bingoBoards[j].board);
+          if(checkIfBingo(bingoBoards[j].board) && bingoBoards[j].winner == false){
+            bingoBoards[j].winner = true;
+            nOfMarks += 1;
+            if(nOfMarks == 1){
+              console.log("Part 1:")
+              calculateWinningNumber(bingoNumbers[i], bingoBoards[j].board);
+            }
+            else if(nOfMarks == nOfBoards){
               console.log("Part 2:")
-              calculateWinningNumber(bingoNumbers[i], bingoBoards[j]);
-              process.exit();
+              calculateWinningNumber(bingoNumbers[i], bingoBoards[j].board);
             }
           }
       }
   }
 }
 
+interface BoardTile {
+  number: Number,
+  matched: Boolean
+}
+
+interface MarkableBoard {
+  board: BoardTile [][],
+  winner: Boolean
+}
 
 //get file
 let fileString: string = syncReadFile('./input2.txt');
 fileString = fileString.replace(/\r?\n?[^\r\n]*$/, ""); //removes annoying last line
 var fileArr = fileString.split('\n\n');
-
 // get bingo numbers
 let firstLine = fileArr.splice(0, 1);
 let bingoNumbers = getBingoNumbers(firstLine[0]);
 let bingoBoards = getBingoBoards(fileArr);
-//part1
-findWinningBingo(bingoNumbers, bingoBoards);
-//part2
-findLosingBingo(bingoNumbers, bingoBoards);
+findWinningAndLosingBingo(bingoNumbers, bingoBoards);
